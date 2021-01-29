@@ -22,15 +22,16 @@ def getCorrectionRate(predicting_data,actual_data):
     return errorRate
 
 def getCorrectionRate1(predicting_data,actual_data):
-    #totalErrorRate = 0    #to set totalErrorRate
     print('below are the errorRate')
+    bigErrorRateCount = 0
     for i in range(len(predicting_data)):
         predictElement = predicting_data[i]
         actualElement = actual_data[i]
         errorRate = (actualElement - predictElement)/actualElement #abs(yElement - xElement)/yElement     #get the absolute difference and find out the error rate
-        #totalErrorRate += errorRate
-    #totalErrorRate = totalErrorRate / len(x)      #sum of the total errors divided by the num of the errors to get the average
+        if errorRate >=1 or errorRate <= -1:
+            bigErrorRateCount = bigErrorRateCount +1
         print(errorRate)
+    print('bigErrorRate is ',bigErrorRateCount)
 
 def process_and_predict(input_train, input_test, output_train,output_test):
     testingElm = None  # first set up the elm machine as None and then do the update
@@ -119,7 +120,8 @@ def bestInNOutputSingleTimeChecker(myGA_ELM):
     loopCount = 0  #to count how many number of loops the while loop run
     curBestOutList =[]; curBestInpuList=[]                 #to store all the bestOutputs in theory
     previousTempOutput=[]     #store the elements that has duplicate twice each time， also need to check the bestOutputList
-    while loopCount < 30:
+    loopingLimit = 20
+    while loopCount < loopingLimit:
         originalOutputSubgroups, originalPredictionSubgroups, originalInputSubgroups = myGA_ELM.select()
         winningSubGroupIndexList, tempSubGroupIndexList = myGA_ELM.crossOver(originalOutputSubgroups,originalPredictionSubgroups)
         curBestFitTrainingDataInputs, curBestFitTrainingDataOutputs = myGA_ELM.mutation(winningSubGroupIndexList,tempSubGroupIndexList,originalOutputSubgroups,originalPredictionSubgroups,originalInputSubgroups)
@@ -134,21 +136,15 @@ def bestInNOutputSingleTimeChecker(myGA_ELM):
 def GA_ELM_findweightNThreash():  # this function will checking the surviving generation after GA algorithm for multiple times, and return the best fit input/and output data
     myGA_ELM = GA_ELMPredictor(input_train, output_train, 100)
     LoopCount = 0
-    bestInpuList=[]; bestOutputList=[]; prevBestInputList=[]; prevBestOutputList=[]
-    while LoopCount < 3:              #do the single time checker multiple times to prune out more unrelated data Instances, and eventually get the closest bestInput/outputList
+    bestInpuList=[]; bestOutputList=[]; prevBestOutputList=[]
+    loopingLimit = 4
+    while LoopCount < loopingLimit:              #do the single time checker multiple times to prune out more unrelated data Instances, and eventually get the closest bestInput/outputList
         curBestInpuList, curBestOutputList, myGA_ELM = bestInNOutputSingleTimeChecker( myGA_ELM )
         if LoopCount == 0:    #first time of looping
-            prevBestInputList = curBestInpuList
             prevBestOutputList = curBestOutputList
         else:                              #situation to check the preBestOutput duplicate with the curBestOutputSituation
             bestOutputList, bestInpuList = checkNAddInputNOutput(prevBestOutputList, curBestOutputList, curBestInpuList , bestOutputList,bestInpuList)
-            ''' 
-            for i in range( len(prevBestOutputList) ):
-                for j in range( len( curBestOutputList ) ):
-                    if prevBestOutputList[ i ] == curBestOutputList[ j ]: #duplicate situation, can add to the final list
-                        bestOutputList.append( curBestOutputList[ j ] )   #appending the list again
-                        bestInpuList.append( curBestInpuList[ j ] )
-            '''
+            prevBestOutputList = bestOutputList  #curBestInpuList   #updating the previousBestOutputList with the besOutputList, keep comparing the existing bestOutput with the new incoming cuBestOutput
         LoopCount = LoopCount + 1            #update the loopCount
     print('bestOutputlist are ', bestOutputList, '\nthe length of the bestOutputList is', len(bestOutputList))
     return  bestInpuList, bestOutputList,myGA_ELM     #bestFitTrainingDataInputs, bestFitTrainingDataOutputs,myGA_ELM
@@ -172,7 +168,7 @@ if __name__ == '__main__':           #to think of the improvement,could go think
     '''
 
     #GA_ELMPrector
-    #'''
+    #6'''
 
     bestFitTrainingDataInputs, bestFitTrainingDataOutputs,myGA_ELM =GA_ELM_findweightNThreash()
     backMappingBestTrainOutputs = myGA_ELM.backMappingFunction(max(output_train), min(output_train), bestFitTrainingDataOutputs)   #note the max output here can also be modified into the global max value of the outputs, might need to change later
